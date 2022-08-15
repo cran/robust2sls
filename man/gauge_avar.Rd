@@ -7,7 +7,7 @@
 gauge_avar(
   ref_dist = c("normal"),
   sign_level,
-  initial_est = c("robustified", "saturated"),
+  initial_est = c("robustified", "saturated", "iis"),
   iteration,
   parameters,
   split
@@ -23,18 +23,20 @@ in the reference distribution against which observations are judged as
 outliers or not.}
 
 \item{initial_est}{A character vector that specifies the initial estimator
-for the outlier detection algorithm. \code{"robustified"} means that the full
-sample 2SLS is used as initial estimator. \code{"saturated"} splits the
-sample into two parts and estimates a 2SLS on each subsample. The
+for the outlier detection algorithm. \code{"robustified"} means that the
+full sample 2SLS is used as initial estimator. \code{"saturated"} splits
+the sample into two parts and estimates a 2SLS on each subsample. The
 coefficients of one subsample are used to calculate residuals and determine
-outliers in the other subsample.}
+outliers in the other subsample. \code{"iis"} applies impulse indicator
+saturation (IIS) as implemented in \code{\link[ivgets]{ivisat}}.}
 
 \item{iteration}{An integer >= 0 or character \code{"convergence"}
 representing the iteration for which the outliers are calculated. Uses the
 fixed point value if set to \code{"convergence"}.}
 
 \item{parameters}{A list created by \link{generate_param} or
-\link{estimate_param_null} that stores the parameters (true or estimated).}
+\link{estimate_param_null} that stores the parameters (true or estimated).
+\code{NULL} permitted if \code{ref_dist == "normal"}.}
 
 \item{split}{A numeric value strictly between 0 and 1 that determines
 in which proportions the sample will be split. Can be \code{NULL} if
@@ -46,4 +48,9 @@ in which proportions the sample will be split. Can be \code{NULL} if
 \description{
 \code{gauge_avar} calculates the asymptotic variance of the gauge for a
 given iteration using a given set of parameters (true or estimated).
+}
+\details{
+Initial estimator \code{"iis"} uses the asymptotic variances of
+  \code{"robustified"} 2SLS because there is no formal theory for the
+  multi-block search.
 }

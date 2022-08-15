@@ -9,7 +9,7 @@ Sys.setenv(LANGUAGE="en")
 
 ## ---- echo = FALSE------------------------------------------------------------
 library(robust2sls)
-library(AER) # for 2sls regression
+library(ivreg) # for 2sls regression
 
 ## -----------------------------------------------------------------------------
 param <- generate_param(dx1 = 1, dx2 = 1, dz2 = 1, intercept = TRUE, beta = c(2,-1), sigma = 1, seed = 2)
