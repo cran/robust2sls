@@ -1,13 +1,13 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
 
-## ---- include = FALSE, echo = FALSE-------------------------------------------
+## ----include = FALSE, echo = FALSE--------------------------------------------
 Sys.setenv(LANGUAGE="en")
 
-## ---- echo = FALSE------------------------------------------------------------
+## ----echo = FALSE-------------------------------------------------------------
 library(robust2sls)
 library(ivreg) # for 2sls regression
 

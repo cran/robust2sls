@@ -51,7 +51,7 @@ overflow: visible;
 </style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -62,7 +62,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -121,13 +121,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
   for (var i = 0; i < sheets.length; i++) {
     if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
     try { var rules = sheets[i].cssRules; } catch (e) { continue; }
-    for (var j = 0; j < rules.length; j++) {
+    var j = 0;
+    while (j < rules.length) {
       var rule = rules[j];
       // check if there is a div.sourceCode rule
-      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -357,11 +364,11 @@ execution.</p>
 <h1>Artificial Data</h1>
 <p>First, we generate the parameters of the 2SLS model randomly and
 create artificial data.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(robust2sls)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># create parameters</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">generate_param</span>(<span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="at">sigma =</span> <span class="dv">2</span>, <span class="at">intercept =</span> <span class="cn">TRUE</span>, <span class="at">seed =</span> <span class="dv">42</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># draw random sample of 1000 observations following the model</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">generate_data</span>(<span class="at">parameters =</span> p, <span class="at">n =</span> <span class="dv">1000</span>)<span class="sc">$</span>data</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(robust2sls)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="co"># create parameters</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">generate_param</span>(<span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="at">sigma =</span> <span class="dv">2</span>, <span class="at">intercept =</span> <span class="cn">TRUE</span>, <span class="at">seed =</span> <span class="dv">42</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co"># draw random sample of 1000 observations following the model</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">generate_data</span>(<span class="at">parameters =</span> p, <span class="at">n =</span> <span class="dv">1000</span>)<span class="sc">$</span>data</span></code></pre></div>
 </div>
 <div id="outlier-detection" class="section level1">
 <h1>Outlier Detection</h1>
@@ -373,15 +380,21 @@ normality) to classify an observation as an outlier or not.</p>
 an object of class <em>robust2sls</em>. This is a list storing, inter
 alia, the model estimates and classifications as outliers for each
 iteration.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> d, <span class="at">formula =</span> p<span class="sc">$</span>setting<span class="sc">$</span>formula, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>                           <span class="at">sign_level =</span> <span class="fl">0.05</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, <span class="at">iterations =</span> <span class="dv">5</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(model)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  robustified </span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x1 + x2 + x3 + x4 + x5 | x1 + x2 + x3 + z4 + z5 + z6 </span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Iterations:  5 </span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  32     Outliers proportion:  0.032</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> d, <span class="at">formula =</span> p<span class="sc">$</span>setting<span class="sc">$</span>formula, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>                           <span class="at">sign_level =</span> <span class="fl">0.05</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, <span class="at">iterations =</span> <span class="dv">5</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="fu">print</span>(model)</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  robustified </span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x1 + x2 + x3 + x4 + x5 | x1 + x2 + x3 + z4 + z5 + z6 </span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; Iterations:  5 </span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  29     Outliers proportion:  0.029</span></span></code></pre></div>
 <p>For some of the tests, we might want to use the same algorithm but
 different cut-off values. Under the null hypothesis of no outliers, we
 expect a proportional relationship between <span class="math inline">\(\gamma_{c}\)</span> and the share of detected
@@ -395,16 +408,46 @@ models by giving the function a vector of multiple <span class="math inline">\(\
 back-end. We choose to run the expression sequentially because it is
 already fast. The function simply returns a list of <em>robust2sls</em>
 objects.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># choose which gamma values to use</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>gammas <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="fl">0.01</span>)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># register backend</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(doFuture)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">registerDoFuture</span>()</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">plan</span>(sequential)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>models <span class="ot">&lt;-</span> <span class="fu">multi_cutoff</span>(<span class="at">gamma =</span> gammas, <span class="at">data =</span> d, <span class="at">formula =</span> p<span class="sc">$</span>setting<span class="sc">$</span>formula, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>                       <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, <span class="at">iterations =</span> <span class="dv">5</span>)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(models)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># choose which gamma values to use</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>gammas <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fl">0.01</span>, <span class="fl">0.05</span>, <span class="fl">0.01</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co"># register backend</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="fu">library</span>(doFuture)</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="fu">registerDoFuture</span>()</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="fu">plan</span>(sequential)</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>models <span class="ot">&lt;-</span> <span class="fu">multi_cutoff</span>(<span class="at">gamma =</span> gammas, <span class="at">data =</span> d, <span class="at">formula =</span> p<span class="sc">$</span>setting<span class="sc">$</span>formula, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>                       <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, <span class="at">iterations =</span> <span class="dv">5</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a><span class="fu">length</span>(models)</span>
+<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a><span class="co">#&gt; [1] 5</span></span></code></pre></div>
 </div>
 <div id="outlier-testing" class="section level1">
 <h1>Outlier Testing</h1>
@@ -437,19 +480,19 @@ is the standard error.</p>
 <p>The function <code>proptest()</code> implements the test. It can
 either be given a <em>robust2sls</em> object or a list thereof, as
 returned by <code>multi_cutoff()</code>.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># using a single robust2sls object</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">proptest</span>(model, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">5</span>, <span class="at">one_sided =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   iter_test iter_act gamma         t      type       pval alpha reject</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1         5        5  0.05 -1.679477 two-sided 0.09305909  0.05  FALSE</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># using a list of robust2sls objects</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">proptest</span>(models, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">5</span>, <span class="at">one_sided =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           iter_test iter_act gamma         t      type      pval alpha reject</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.01         5        5  0.01 -1.612677 one-sided 0.9465927  0.05  FALSE</span></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.02         5        5  0.02 -1.220803 one-sided 0.8889197  0.05  FALSE</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.03         5        5  0.03 -1.199388 one-sided 0.8848115  0.05  FALSE</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.04         5        5  0.04 -1.529832 one-sided 0.9369708  0.05  FALSE</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.05         5        5  0.05 -1.679477 one-sided 0.9534705  0.05  FALSE</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># using a single robust2sls object</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">proptest</span>(model, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">5</span>, <span class="at">one_sided =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;   iter_test iter_act gamma        t      type       pval alpha reject</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; 1         5        5  0.05 -1.95939 two-sided 0.05006713  0.05  FALSE</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co"># using a list of robust2sls objects</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="fu">proptest</span>(models, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">5</span>, <span class="at">one_sided =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;           iter_test iter_act gamma         t      type      pval alpha reject</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; gamma0.01         5        5  0.01 -1.075118 one-sided 0.8588391  0.05  FALSE</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; gamma0.02         5        5  0.02 -1.220803 one-sided 0.8889197  0.05  FALSE</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; gamma0.03         5        5  0.03 -1.199388 one-sided 0.8848115  0.05  FALSE</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; gamma0.04         5        5  0.04 -1.966926 one-sided 0.9754041  0.05  FALSE</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; gamma0.05         5        5  0.05 -1.959390 one-sided 0.9749664  0.05  FALSE</span></span></code></pre></div>
 <p>The function returns a data frame and each row corresponds to one
 setting of <span class="math inline">\(\gamma_{c}\)</span>. Note that
 the value of the test statistic is the same for the first call of
@@ -462,25 +505,25 @@ which may differ across different settings of <span class="math inline">\(\gamma
 rejects for positive deviations from the expected value while the
 two-sided test rejects in both directions.</p>
 <p>When testing several settings of the algorithms, we have a multiple
-testing issue. We can apply the <a href="https://academic.oup.com/biomet/article/73/3/751/250538">Simes
-(1986)</a> procedure to fix the significance level for the global null
-hypothesis, which is rejected if any of the individual null hypotheses
-is rejected at the adjusted significance level.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>proptests <span class="ot">&lt;-</span> <span class="fu">proptest</span>(models, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">5</span>, <span class="at">one_sided =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>a <span class="ot">&lt;-</span> <span class="fu">globaltest</span>(<span class="at">tests =</span> proptests, <span class="at">global_alpha =</span> <span class="fl">0.05</span>)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># decision for global hypothesis test</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>a<span class="sc">$</span>reject</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co"># details for the Simes procedure</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>a<span class="sc">$</span>tests[, <span class="fu">c</span>(<span class="st">&quot;iter_test&quot;</span>, <span class="st">&quot;iter_act&quot;</span>, <span class="st">&quot;gamma&quot;</span>, <span class="st">&quot;t&quot;</span>, <span class="st">&quot;pval&quot;</span>, <span class="st">&quot;alpha_adj&quot;</span>, <span class="st">&quot;reject_adj&quot;</span>)]</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           iter_test iter_act gamma         t      pval alpha_adj reject_adj</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.01         5        5  0.01 -1.612677 0.9465927      0.04      FALSE</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.02         5        5  0.02 -1.220803 0.8889197      0.02      FALSE</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.03         5        5  0.03 -1.199388 0.8848115      0.01      FALSE</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.04         5        5  0.04 -1.529832 0.9369708      0.03      FALSE</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.05         5        5  0.05 -1.679477 0.9534705      0.05      FALSE</span></span></code></pre></div>
+testing issue. We can apply the Simes (1986) (DOI:
+10.1093/biomet/73.3.751) procedure to fix the significance level for the
+global null hypothesis, which is rejected if any of the individual null
+hypotheses is rejected at the adjusted significance level.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>proptests <span class="ot">&lt;-</span> <span class="fu">proptest</span>(models, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">5</span>, <span class="at">one_sided =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>a <span class="ot">&lt;-</span> <span class="fu">globaltest</span>(<span class="at">tests =</span> proptests, <span class="at">global_alpha =</span> <span class="fl">0.05</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co"># decision for global hypothesis test</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>a<span class="sc">$</span>reject</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co"># details for the Simes procedure</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>a<span class="sc">$</span>tests[, <span class="fu">c</span>(<span class="st">&quot;iter_test&quot;</span>, <span class="st">&quot;iter_act&quot;</span>, <span class="st">&quot;gamma&quot;</span>, <span class="st">&quot;t&quot;</span>, <span class="st">&quot;pval&quot;</span>, <span class="st">&quot;alpha_adj&quot;</span>, <span class="st">&quot;reject_adj&quot;</span>)]</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt;           iter_test iter_act gamma         t      pval alpha_adj reject_adj</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; gamma0.01         5        5  0.01 -1.075118 0.8588391      0.01      FALSE</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; gamma0.02         5        5  0.02 -1.220803 0.8889197      0.03      FALSE</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; gamma0.03         5        5  0.03 -1.199388 0.8848115      0.02      FALSE</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; gamma0.04         5        5  0.04 -1.966926 0.9754041      0.05      FALSE</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; gamma0.05         5        5  0.05 -1.959390 0.9749664      0.04      FALSE</span></span></code></pre></div>
 </div>
 <div id="count-test" class="section level2">
 <h2>Count Test</h2>
@@ -491,50 +534,50 @@ statistic asymptotically follows a Poisson distribution. <span class="math displ
 <p>The function <code>counttest()</code> implements the test. As
 <code>porptest()</code>, it can either take a <em>robust2sls</em> object
 or a list thereof.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># using a single robust2sls object</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">counttest</span>(model, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">5</span>, <span class="at">one_sided =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   iter_test iter_act gamma num_act num_exp      type        pval alpha reject</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1         5        5  0.05      32      50 two-sided 0.008785864  0.05   TRUE</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   tsmethod</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1  central</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co"># using a list of robust2sls objects</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="fu">counttest</span>(models, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">5</span>, <span class="at">one_sided =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           iter_test iter_act gamma num_act num_exp      type      pval alpha</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.01         5        5  0.01       4      10 one-sided 0.9896639  0.05</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.02         5        5  0.02      13      20 one-sided 0.9609880  0.05</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.03         5        5  0.03      21      30 one-sided 0.9647154  0.05</span></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.04         5        5  0.04      26      40 one-sided 0.9924336  0.05</span></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.05         5        5  0.05      32      50 one-sided 0.9973137  0.05</span></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           reject tsmethod</span></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.01  FALSE     &lt;NA&gt;</span></span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.02  FALSE     &lt;NA&gt;</span></span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.03  FALSE     &lt;NA&gt;</span></span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.04  FALSE     &lt;NA&gt;</span></span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.05  FALSE     &lt;NA&gt;</span></span></code></pre></div>
-<p>As before, we can use the <a href="https://academic.oup.com/biomet/article/73/3/751/250538">Simes
-(1986)</a> procedure to account for multiple hypothesis testing.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>counttests <span class="ot">&lt;-</span> <span class="fu">counttest</span>(models, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">5</span>, <span class="at">one_sided =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">globaltest</span>(<span class="at">tests =</span> counttests, <span class="at">global_alpha =</span> <span class="fl">0.05</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># decision for global hypothesis test</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>b<span class="sc">$</span>reject</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co"># details for the Simes procedure</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>b<span class="sc">$</span>tests[, <span class="fu">c</span>(<span class="st">&quot;iter_test&quot;</span>, <span class="st">&quot;iter_act&quot;</span>, <span class="st">&quot;gamma&quot;</span>, <span class="st">&quot;num_act&quot;</span>, <span class="st">&quot;num_exp&quot;</span>, <span class="st">&quot;pval&quot;</span>, <span class="st">&quot;alpha_adj&quot;</span>, <span class="st">&quot;reject_adj&quot;</span>)]</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           iter_test iter_act gamma num_act num_exp      pval alpha_adj</span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.01         5        5  0.01       4      10 0.9896639      0.03</span></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.02         5        5  0.02      13      20 0.9609880      0.01</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.03         5        5  0.03      21      30 0.9647154      0.02</span></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.04         5        5  0.04      26      40 0.9924336      0.04</span></span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.05         5        5  0.05      32      50 0.9973137      0.05</span></span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           reject_adj</span></span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.01      FALSE</span></span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.02      FALSE</span></span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.03      FALSE</span></span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.04      FALSE</span></span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gamma0.05      FALSE</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># using a single robust2sls object</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">counttest</span>(model, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">5</span>, <span class="at">one_sided =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt;   iter_test iter_act gamma num_act num_exp      type        pval alpha reject</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; 1         5        5  0.05      29      50 two-sided 0.001833658  0.05   TRUE</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt;   tsmethod</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; 1  central</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co"># using a list of robust2sls objects</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="fu">counttest</span>(models, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">5</span>, <span class="at">one_sided =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt;           iter_test iter_act gamma num_act num_exp      type      pval alpha</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; gamma0.01         5        5  0.01       6      10 one-sided 0.9329140  0.05</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; gamma0.02         5        5  0.02      13      20 one-sided 0.9609880  0.05</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; gamma0.03         5        5  0.03      21      30 one-sided 0.9647154  0.05</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; gamma0.04         5        5  0.04      22      40 one-sided 0.9992660  0.05</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; gamma0.05         5        5  0.05      29      50 one-sided 0.9994895  0.05</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt;           reject tsmethod</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; gamma0.01  FALSE     &lt;NA&gt;</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; gamma0.02  FALSE     &lt;NA&gt;</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; gamma0.03  FALSE     &lt;NA&gt;</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; gamma0.04  FALSE     &lt;NA&gt;</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; gamma0.05  FALSE     &lt;NA&gt;</span></span></code></pre></div>
+<p>As before, we can use the Simes (1986) (DOI: 10.1093/biomet/73.3.751)
+procedure to account for multiple hypothesis testing.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>counttests <span class="ot">&lt;-</span> <span class="fu">counttest</span>(models, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">5</span>, <span class="at">one_sided =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">globaltest</span>(<span class="at">tests =</span> counttests, <span class="at">global_alpha =</span> <span class="fl">0.05</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co"># decision for global hypothesis test</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>b<span class="sc">$</span>reject</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co"># details for the Simes procedure</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>b<span class="sc">$</span>tests[, <span class="fu">c</span>(<span class="st">&quot;iter_test&quot;</span>, <span class="st">&quot;iter_act&quot;</span>, <span class="st">&quot;gamma&quot;</span>, <span class="st">&quot;num_act&quot;</span>, <span class="st">&quot;num_exp&quot;</span>, <span class="st">&quot;pval&quot;</span>, <span class="st">&quot;alpha_adj&quot;</span>, <span class="st">&quot;reject_adj&quot;</span>)]</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt;           iter_test iter_act gamma num_act num_exp      pval alpha_adj</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; gamma0.01         5        5  0.01       6      10 0.9329140      0.01</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; gamma0.02         5        5  0.02      13      20 0.9609880      0.02</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; gamma0.03         5        5  0.03      21      30 0.9647154      0.03</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; gamma0.04         5        5  0.04      22      40 0.9992660      0.04</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; gamma0.05         5        5  0.05      29      50 0.9994895      0.05</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt;           reject_adj</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; gamma0.01      FALSE</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; gamma0.02      FALSE</span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; gamma0.03      FALSE</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; gamma0.04      FALSE</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; gamma0.05      FALSE</span></span></code></pre></div>
 </div>
 <div id="scaling-sum-test" class="section level2">
 <h2>Scaling Sum Test</h2>
@@ -548,10 +591,10 @@ different cut-offs / values of <span class="math inline">\(\gamma_{c}\)</span>: 
 - \gamma_{c_{k}})/se,\]</span> where <span class="math inline">\(K\)</span> is the number of different cut-off
 values that we have tried and <span class="math inline">\(se\)</span> is
 the standard error of this sum.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>c <span class="ot">&lt;-</span> <span class="fu">sumtest</span>(models, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">1</span>, <span class="at">one_sided =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(c, <span class="st">&quot;gammas&quot;</span>)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 0.01 0.02 0.03 0.04 0.05</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>c <span class="ot">&lt;-</span> <span class="fu">sumtest</span>(models, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">1</span>, <span class="at">one_sided =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">attr</span>(c, <span class="st">&quot;gammas&quot;</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; [1] 0.01 0.02 0.03 0.04 0.05</span></span></code></pre></div>
 <p>Note that we tested iteration 1 instead of iteration 5, which was the
 number of iterations we applied the algorithm. In general, as long as
 all <em>robust2sls</em> model objects contain that iteration, it can be
@@ -573,13 +616,13 @@ p-value.</p>
 can specify which critical values should be returned. The default is to
 report the values corresponding to the 90th, 95th, and 99th
 quantile.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">suptest</span>(models, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">5</span>)</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(d, <span class="st">&quot;gammas&quot;</span>)</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 0.01 0.02 0.03 0.04 0.05</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">attr</span>(d, <span class="st">&quot;critical&quot;</span>)</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       90%       95%       99% </span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 0.5894801 0.6869229 0.8879335</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">suptest</span>(models, <span class="at">alpha =</span> <span class="fl">0.05</span>, <span class="at">iteration =</span> <span class="dv">5</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="fu">attr</span>(d, <span class="st">&quot;gammas&quot;</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; [1] 0.01 0.02 0.03 0.04 0.05</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="fu">attr</span>(d, <span class="st">&quot;critical&quot;</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt;       90%       95%       99% </span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; 0.5894801 0.6869229 0.8879335</span></span></code></pre></div>
 <p>As for <code>sumtest()</code>, the returned data frame has an
 attribute called <code>&quot;gammas&quot;</code>, which stores the <span class="math inline">\(\gamma_{c}\)</span> values that were used in
 constructing the test. In addition, there is an attribute

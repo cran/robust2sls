@@ -1,14 +1,14 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
 
-## ---- include = FALSE, echo = FALSE-------------------------------------------
+## ----include = FALSE, echo = FALSE--------------------------------------------
 Sys.setenv(LANGUAGE="en")
 
-## ---- eval = FALSE------------------------------------------------------------
-#  utils::vignette("overview", package = "robust2sls")
+## ----eval = FALSE-------------------------------------------------------------
+# utils::vignette("overview", package = "robust2sls")
 
 ## -----------------------------------------------------------------------------
 library(robust2sls)

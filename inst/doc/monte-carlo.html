@@ -51,7 +51,7 @@ overflow: visible;
 </style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -62,7 +62,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -121,13 +121,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
   for (var i = 0; i < sheets.length; i++) {
     if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
     try { var rules = sheets[i].cssRules; } catch (e) { continue; }
-    for (var j = 0; j < rules.length; j++) {
+    var j = 0;
+    while (j < rules.length) {
       var rule = rules[j];
       // check if there is a div.sourceCode rule
-      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -361,7 +368,7 @@ parallel and run the simulations</li>
 <p>See the vignette <em>Introduction to the robust2sls Package</em> for
 more details on the model setup (step 1) and the different algorithms
 (step 2) that are implemented.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>utils<span class="sc">::</span><span class="fu">vignette</span>(<span class="st">&quot;overview&quot;</span>, <span class="at">package =</span> <span class="st">&quot;robust2sls&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>utils<span class="sc">::</span><span class="fu">vignette</span>(<span class="st">&quot;overview&quot;</span>, <span class="at">package =</span> <span class="st">&quot;robust2sls&quot;</span>)</span></code></pre></div>
 </div>
 <div id="step-1-true-model" class="section level1">
 <h1>Step 1: True model</h1>
@@ -379,8 +386,8 @@ conditions. For instance, the parameters are created such that the
 structural error is uncorrelated to the instruments. Instead of random
 parameters, they can also - partly or fully - be specified by the
 user.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(robust2sls)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">generate_param</span>(<span class="at">dx1 =</span> <span class="dv">3</span>, <span class="at">dx2 =</span> <span class="dv">2</span>, <span class="at">dz2 =</span> <span class="dv">3</span>, <span class="at">intercept =</span> <span class="cn">TRUE</span>, <span class="at">seed =</span> <span class="dv">10</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(robust2sls)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">generate_param</span>(<span class="at">dx1 =</span> <span class="dv">3</span>, <span class="at">dx2 =</span> <span class="dv">2</span>, <span class="at">dz2 =</span> <span class="dv">3</span>, <span class="at">intercept =</span> <span class="cn">TRUE</span>, <span class="at">seed =</span> <span class="dv">10</span>)</span></code></pre></div>
 <p>Here, we create parameters for a model with 3 exogenous and 2
 endogenous regressors, and 3 outside instruments. The model includes an
 intercept, so one of the exogenous instruments is simply a constant. The
@@ -457,54 +464,454 @@ that are used within <code>mc_grid()</code> explicitly. With
 <code>registerDoFuture()</code>, it should not be necessary to
 explicitly export variables or packages because it identifies them
 automatically via static code inspection.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(parallel)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>ncores <span class="ot">&lt;-</span> <span class="dv">2</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>cl <span class="ot">&lt;-</span> <span class="fu">makeCluster</span>(ncores)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># export libraries to all workers in the cluster</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">invisible</span>(<span class="fu">clusterCall</span>(<span class="at">cl =</span> cl, <span class="cf">function</span>(x) <span class="fu">.libPaths</span>(x), <span class="fu">.libPaths</span>()))</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">library</span>(parallel)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>ncores <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>cl <span class="ot">&lt;-</span> <span class="fu">makeCluster</span>(ncores)</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co"># export libraries to all workers in the cluster</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="fu">invisible</span>(<span class="fu">clusterCall</span>(<span class="at">cl =</span> cl, <span class="cf">function</span>(x) <span class="fu">.libPaths</span>(x), <span class="fu">.libPaths</span>()))</span></code></pre></div>
 <p>First, we use the <a href="https://CRAN.R-project.org/package=doParallel">doParallel</a>
 package to run the simulations in parallel.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(doParallel)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Loading required package: foreach</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Loading required package: iterators</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">registerDoParallel</span>(cl)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>sim1 <span class="ot">&lt;-</span> <span class="fu">mc_grid</span>(<span class="at">M =</span> <span class="dv">100</span>, <span class="at">n =</span> <span class="fu">c</span>(<span class="dv">100</span>, <span class="dv">1000</span>), <span class="at">seed =</span> <span class="dv">42</span>, <span class="at">parameters =</span> p, </span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>               <span class="at">formula =</span> p<span class="sc">$</span>setting<span class="sc">$</span>formula, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>, </span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>               <span class="at">sign_level =</span> <span class="fl">0.05</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, <span class="at">iterations =</span> <span class="dv">0</span>,</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>               <span class="at">shuffle =</span> <span class="cn">FALSE</span>, <span class="at">shuffle_seed =</span> <span class="dv">42</span>, <span class="at">split =</span> <span class="fl">0.5</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">library</span>(doParallel)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; Loading required package: foreach</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; Loading required package: iterators</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="fu">registerDoParallel</span>(cl)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>sim1 <span class="ot">&lt;-</span> <span class="fu">mc_grid</span>(<span class="at">M =</span> <span class="dv">100</span>, <span class="at">n =</span> <span class="fu">c</span>(<span class="dv">100</span>, <span class="dv">1000</span>), <span class="at">seed =</span> <span class="dv">42</span>, <span class="at">parameters =</span> p, </span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>               <span class="at">formula =</span> p<span class="sc">$</span>setting<span class="sc">$</span>formula, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>, </span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>               <span class="at">sign_level =</span> <span class="fl">0.05</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, <span class="at">iterations =</span> <span class="dv">0</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>               <span class="at">shuffle =</span> <span class="cn">FALSE</span>, <span class="at">shuffle_seed =</span> <span class="dv">42</span>, <span class="at">split =</span> <span class="fl">0.5</span>)</span></code></pre></div>
 <p>Next, we use the <a href="https://CRAN.R-project.org/package=doFuture">doFuture</a> package
 for the parallel loop. Both implementations yield the same result.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(doFuture)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Loading required package: future</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">registerDoFuture</span>()</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plan</span>(cluster, <span class="at">workers =</span> cl)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>sim2 <span class="ot">&lt;-</span> <span class="fu">mc_grid</span>(<span class="at">M =</span> <span class="dv">100</span>, <span class="at">n =</span> <span class="fu">c</span>(<span class="dv">100</span>, <span class="dv">1000</span>), <span class="at">seed =</span> <span class="dv">42</span>, <span class="at">parameters =</span> p, </span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>               <span class="at">formula =</span> p<span class="sc">$</span>setting<span class="sc">$</span>formula, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>, </span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>               <span class="at">sign_level =</span> <span class="fl">0.05</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, <span class="at">iterations =</span> <span class="dv">0</span>,</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>               <span class="at">shuffle =</span> <span class="cn">FALSE</span>, <span class="at">shuffle_seed =</span> <span class="dv">42</span>, <span class="at">split =</span> <span class="fl">0.5</span>)</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="fu">stopCluster</span>(cl)</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co"># check identical results</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="fu">identical</span>(sim1, sim2)</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">library</span>(doFuture)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; Loading required package: future</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">registerDoFuture</span>()</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="fu">plan</span>(cluster, <span class="at">workers =</span> cl)</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>sim2 <span class="ot">&lt;-</span> <span class="fu">mc_grid</span>(<span class="at">M =</span> <span class="dv">100</span>, <span class="at">n =</span> <span class="fu">c</span>(<span class="dv">100</span>, <span class="dv">1000</span>), <span class="at">seed =</span> <span class="dv">42</span>, <span class="at">parameters =</span> p, </span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>               <span class="at">formula =</span> p<span class="sc">$</span>setting<span class="sc">$</span>formula, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>, </span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>               <span class="at">sign_level =</span> <span class="fl">0.05</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, <span class="at">iterations =</span> <span class="dv">0</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>               <span class="at">shuffle =</span> <span class="cn">FALSE</span>, <span class="at">shuffle_seed =</span> <span class="dv">42</span>, <span class="at">split =</span> <span class="fl">0.5</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-44"><a href="#cb5-44" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-45"><a href="#cb5-45" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-46"><a href="#cb5-46" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-47"><a href="#cb5-47" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-48"><a href="#cb5-48" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-49"><a href="#cb5-49" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-50"><a href="#cb5-50" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-51"><a href="#cb5-51" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-52"><a href="#cb5-52" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-53"><a href="#cb5-53" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-54"><a href="#cb5-54" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-55"><a href="#cb5-55" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-56"><a href="#cb5-56" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-57"><a href="#cb5-57" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-58"><a href="#cb5-58" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-59"><a href="#cb5-59" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-60"><a href="#cb5-60" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-61"><a href="#cb5-61" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-62"><a href="#cb5-62" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-63"><a href="#cb5-63" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-64"><a href="#cb5-64" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-65"><a href="#cb5-65" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-66"><a href="#cb5-66" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-67"><a href="#cb5-67" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-68"><a href="#cb5-68" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-69"><a href="#cb5-69" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-70"><a href="#cb5-70" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-71"><a href="#cb5-71" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-72"><a href="#cb5-72" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-73"><a href="#cb5-73" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-74"><a href="#cb5-74" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-75"><a href="#cb5-75" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-76"><a href="#cb5-76" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-77"><a href="#cb5-77" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-78"><a href="#cb5-78" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-79"><a href="#cb5-79" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-80"><a href="#cb5-80" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-81"><a href="#cb5-81" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-82"><a href="#cb5-82" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-83"><a href="#cb5-83" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-84"><a href="#cb5-84" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-85"><a href="#cb5-85" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-86"><a href="#cb5-86" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-87"><a href="#cb5-87" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-88"><a href="#cb5-88" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-89"><a href="#cb5-89" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-90"><a href="#cb5-90" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-91"><a href="#cb5-91" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-92"><a href="#cb5-92" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-93"><a href="#cb5-93" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-94"><a href="#cb5-94" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-95"><a href="#cb5-95" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-96"><a href="#cb5-96" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-97"><a href="#cb5-97" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-98"><a href="#cb5-98" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-99"><a href="#cb5-99" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-100"><a href="#cb5-100" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-101"><a href="#cb5-101" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-102"><a href="#cb5-102" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-103"><a href="#cb5-103" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-104"><a href="#cb5-104" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-105"><a href="#cb5-105" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-106"><a href="#cb5-106" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-107"><a href="#cb5-107" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-108"><a href="#cb5-108" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-109"><a href="#cb5-109" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-110"><a href="#cb5-110" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-111"><a href="#cb5-111" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-112"><a href="#cb5-112" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-113"><a href="#cb5-113" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-114"><a href="#cb5-114" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-115"><a href="#cb5-115" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-116"><a href="#cb5-116" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-117"><a href="#cb5-117" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-118"><a href="#cb5-118" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-119"><a href="#cb5-119" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-120"><a href="#cb5-120" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-121"><a href="#cb5-121" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-122"><a href="#cb5-122" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-123"><a href="#cb5-123" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-124"><a href="#cb5-124" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-125"><a href="#cb5-125" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-126"><a href="#cb5-126" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-127"><a href="#cb5-127" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-128"><a href="#cb5-128" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-129"><a href="#cb5-129" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-130"><a href="#cb5-130" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-131"><a href="#cb5-131" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-132"><a href="#cb5-132" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-133"><a href="#cb5-133" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-134"><a href="#cb5-134" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-135"><a href="#cb5-135" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-136"><a href="#cb5-136" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-137"><a href="#cb5-137" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-138"><a href="#cb5-138" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-139"><a href="#cb5-139" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-140"><a href="#cb5-140" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-141"><a href="#cb5-141" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-142"><a href="#cb5-142" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-143"><a href="#cb5-143" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-144"><a href="#cb5-144" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-145"><a href="#cb5-145" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-146"><a href="#cb5-146" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-147"><a href="#cb5-147" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-148"><a href="#cb5-148" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-149"><a href="#cb5-149" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-150"><a href="#cb5-150" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-151"><a href="#cb5-151" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-152"><a href="#cb5-152" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-153"><a href="#cb5-153" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-154"><a href="#cb5-154" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-155"><a href="#cb5-155" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-156"><a href="#cb5-156" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-157"><a href="#cb5-157" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-158"><a href="#cb5-158" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-159"><a href="#cb5-159" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-160"><a href="#cb5-160" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-161"><a href="#cb5-161" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-162"><a href="#cb5-162" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-163"><a href="#cb5-163" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-164"><a href="#cb5-164" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-165"><a href="#cb5-165" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-166"><a href="#cb5-166" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-167"><a href="#cb5-167" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-168"><a href="#cb5-168" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-169"><a href="#cb5-169" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-170"><a href="#cb5-170" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-171"><a href="#cb5-171" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-172"><a href="#cb5-172" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-173"><a href="#cb5-173" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-174"><a href="#cb5-174" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-175"><a href="#cb5-175" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-176"><a href="#cb5-176" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-177"><a href="#cb5-177" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-178"><a href="#cb5-178" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-179"><a href="#cb5-179" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-180"><a href="#cb5-180" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-181"><a href="#cb5-181" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-182"><a href="#cb5-182" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-183"><a href="#cb5-183" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-184"><a href="#cb5-184" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-185"><a href="#cb5-185" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-186"><a href="#cb5-186" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-187"><a href="#cb5-187" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-188"><a href="#cb5-188" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-189"><a href="#cb5-189" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-190"><a href="#cb5-190" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-191"><a href="#cb5-191" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-192"><a href="#cb5-192" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-193"><a href="#cb5-193" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-194"><a href="#cb5-194" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-195"><a href="#cb5-195" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-196"><a href="#cb5-196" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-197"><a href="#cb5-197" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-198"><a href="#cb5-198" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-199"><a href="#cb5-199" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-200"><a href="#cb5-200" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-201"><a href="#cb5-201" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-202"><a href="#cb5-202" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-203"><a href="#cb5-203" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-204"><a href="#cb5-204" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-205"><a href="#cb5-205" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-206"><a href="#cb5-206" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-207"><a href="#cb5-207" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-208"><a href="#cb5-208" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb5-209"><a href="#cb5-209" tabindex="-1"></a><span class="fu">stopCluster</span>(cl)</span>
+<span id="cb5-210"><a href="#cb5-210" tabindex="-1"></a></span>
+<span id="cb5-211"><a href="#cb5-211" tabindex="-1"></a><span class="co"># check identical results</span></span>
+<span id="cb5-212"><a href="#cb5-212" tabindex="-1"></a><span class="fu">identical</span>(sim1, sim2)</span>
+<span id="cb5-213"><a href="#cb5-213" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 </div>
 <div id="sequential-loop" class="section level2">
 <h2>Sequential loop</h2>
 <p>To run the loop sequentially, we can again use the <a href="https://CRAN.R-project.org/package=doFuture">doFuture</a> package
 but this time setting a different plan. The <a href="https://CRAN.R-project.org/package=doRNG">doRNG</a> ensures that
 the results are identical to those from the parallel loops.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(doFuture)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">registerDoFuture</span>()</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plan</span>(sequential)</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>sim3 <span class="ot">&lt;-</span> <span class="fu">mc_grid</span>(<span class="at">M =</span> <span class="dv">100</span>, <span class="at">n =</span> <span class="fu">c</span>(<span class="dv">100</span>, <span class="dv">1000</span>), <span class="at">seed =</span> <span class="dv">42</span>, <span class="at">parameters =</span> p, </span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>               <span class="at">formula =</span> p<span class="sc">$</span>setting<span class="sc">$</span>formula, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>, </span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>               <span class="at">sign_level =</span> <span class="fl">0.05</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, <span class="at">iterations =</span> <span class="dv">0</span>,</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>               <span class="at">shuffle =</span> <span class="cn">FALSE</span>, <span class="at">shuffle_seed =</span> <span class="dv">42</span>, <span class="at">split =</span> <span class="fl">0.5</span>)</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Loading required package: rngtools</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># check identical results</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="fu">identical</span>(sim1, sim3)</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">library</span>(doFuture)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">registerDoFuture</span>()</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">plan</span>(sequential)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>sim3 <span class="ot">&lt;-</span> <span class="fu">mc_grid</span>(<span class="at">M =</span> <span class="dv">100</span>, <span class="at">n =</span> <span class="fu">c</span>(<span class="dv">100</span>, <span class="dv">1000</span>), <span class="at">seed =</span> <span class="dv">42</span>, <span class="at">parameters =</span> p, </span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>               <span class="at">formula =</span> p<span class="sc">$</span>setting<span class="sc">$</span>formula, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>, </span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>               <span class="at">sign_level =</span> <span class="fl">0.05</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, <span class="at">iterations =</span> <span class="dv">0</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>               <span class="at">shuffle =</span> <span class="cn">FALSE</span>, <span class="at">shuffle_seed =</span> <span class="dv">42</span>, <span class="at">split =</span> <span class="fl">0.5</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; Loading required package: rngtools</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-41"><a href="#cb6-41" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-42"><a href="#cb6-42" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-43"><a href="#cb6-43" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-44"><a href="#cb6-44" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-45"><a href="#cb6-45" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-46"><a href="#cb6-46" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-47"><a href="#cb6-47" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-48"><a href="#cb6-48" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-49"><a href="#cb6-49" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-50"><a href="#cb6-50" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-51"><a href="#cb6-51" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-52"><a href="#cb6-52" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-53"><a href="#cb6-53" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-54"><a href="#cb6-54" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-55"><a href="#cb6-55" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-56"><a href="#cb6-56" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-57"><a href="#cb6-57" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-58"><a href="#cb6-58" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-59"><a href="#cb6-59" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-60"><a href="#cb6-60" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-61"><a href="#cb6-61" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-62"><a href="#cb6-62" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-63"><a href="#cb6-63" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-64"><a href="#cb6-64" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-65"><a href="#cb6-65" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-66"><a href="#cb6-66" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-67"><a href="#cb6-67" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-68"><a href="#cb6-68" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-69"><a href="#cb6-69" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-70"><a href="#cb6-70" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-71"><a href="#cb6-71" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-72"><a href="#cb6-72" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-73"><a href="#cb6-73" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-74"><a href="#cb6-74" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-75"><a href="#cb6-75" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-76"><a href="#cb6-76" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-77"><a href="#cb6-77" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-78"><a href="#cb6-78" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-79"><a href="#cb6-79" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-80"><a href="#cb6-80" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-81"><a href="#cb6-81" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-82"><a href="#cb6-82" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-83"><a href="#cb6-83" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-84"><a href="#cb6-84" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-85"><a href="#cb6-85" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-86"><a href="#cb6-86" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-87"><a href="#cb6-87" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-88"><a href="#cb6-88" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-89"><a href="#cb6-89" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-90"><a href="#cb6-90" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-91"><a href="#cb6-91" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-92"><a href="#cb6-92" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-93"><a href="#cb6-93" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-94"><a href="#cb6-94" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-95"><a href="#cb6-95" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-96"><a href="#cb6-96" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-97"><a href="#cb6-97" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-98"><a href="#cb6-98" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-99"><a href="#cb6-99" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-100"><a href="#cb6-100" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-101"><a href="#cb6-101" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-102"><a href="#cb6-102" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-103"><a href="#cb6-103" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-104"><a href="#cb6-104" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-105"><a href="#cb6-105" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-106"><a href="#cb6-106" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-107"><a href="#cb6-107" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-108"><a href="#cb6-108" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-109"><a href="#cb6-109" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-110"><a href="#cb6-110" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-111"><a href="#cb6-111" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-112"><a href="#cb6-112" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-113"><a href="#cb6-113" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-114"><a href="#cb6-114" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-115"><a href="#cb6-115" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-116"><a href="#cb6-116" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-117"><a href="#cb6-117" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-118"><a href="#cb6-118" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-119"><a href="#cb6-119" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-120"><a href="#cb6-120" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-121"><a href="#cb6-121" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-122"><a href="#cb6-122" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-123"><a href="#cb6-123" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-124"><a href="#cb6-124" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-125"><a href="#cb6-125" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-126"><a href="#cb6-126" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-127"><a href="#cb6-127" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-128"><a href="#cb6-128" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-129"><a href="#cb6-129" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-130"><a href="#cb6-130" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-131"><a href="#cb6-131" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-132"><a href="#cb6-132" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-133"><a href="#cb6-133" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-134"><a href="#cb6-134" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-135"><a href="#cb6-135" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-136"><a href="#cb6-136" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-137"><a href="#cb6-137" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-138"><a href="#cb6-138" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-139"><a href="#cb6-139" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-140"><a href="#cb6-140" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-141"><a href="#cb6-141" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-142"><a href="#cb6-142" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-143"><a href="#cb6-143" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-144"><a href="#cb6-144" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-145"><a href="#cb6-145" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-146"><a href="#cb6-146" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-147"><a href="#cb6-147" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-148"><a href="#cb6-148" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-149"><a href="#cb6-149" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-150"><a href="#cb6-150" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-151"><a href="#cb6-151" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-152"><a href="#cb6-152" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-153"><a href="#cb6-153" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-154"><a href="#cb6-154" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-155"><a href="#cb6-155" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-156"><a href="#cb6-156" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-157"><a href="#cb6-157" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-158"><a href="#cb6-158" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-159"><a href="#cb6-159" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-160"><a href="#cb6-160" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-161"><a href="#cb6-161" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-162"><a href="#cb6-162" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-163"><a href="#cb6-163" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-164"><a href="#cb6-164" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-165"><a href="#cb6-165" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-166"><a href="#cb6-166" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-167"><a href="#cb6-167" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-168"><a href="#cb6-168" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-169"><a href="#cb6-169" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-170"><a href="#cb6-170" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-171"><a href="#cb6-171" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-172"><a href="#cb6-172" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-173"><a href="#cb6-173" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-174"><a href="#cb6-174" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-175"><a href="#cb6-175" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-176"><a href="#cb6-176" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-177"><a href="#cb6-177" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-178"><a href="#cb6-178" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-179"><a href="#cb6-179" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-180"><a href="#cb6-180" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-181"><a href="#cb6-181" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-182"><a href="#cb6-182" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-183"><a href="#cb6-183" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-184"><a href="#cb6-184" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-185"><a href="#cb6-185" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-186"><a href="#cb6-186" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-187"><a href="#cb6-187" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-188"><a href="#cb6-188" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-189"><a href="#cb6-189" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-190"><a href="#cb6-190" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-191"><a href="#cb6-191" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-192"><a href="#cb6-192" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-193"><a href="#cb6-193" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-194"><a href="#cb6-194" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-195"><a href="#cb6-195" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-196"><a href="#cb6-196" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-197"><a href="#cb6-197" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-198"><a href="#cb6-198" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-199"><a href="#cb6-199" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-200"><a href="#cb6-200" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-201"><a href="#cb6-201" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-202"><a href="#cb6-202" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-203"><a href="#cb6-203" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-204"><a href="#cb6-204" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-205"><a href="#cb6-205" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-206"><a href="#cb6-206" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-207"><a href="#cb6-207" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-208"><a href="#cb6-208" tabindex="-1"></a><span class="co">#&gt; Warning in predict.ivreg(model, data): aliased coefficients in model, dropped</span></span>
+<span id="cb6-209"><a href="#cb6-209" tabindex="-1"></a></span>
+<span id="cb6-210"><a href="#cb6-210" tabindex="-1"></a><span class="co"># check identical results</span></span>
+<span id="cb6-211"><a href="#cb6-211" tabindex="-1"></a><span class="fu">identical</span>(sim1, sim3)</span>
+<span id="cb6-212"><a href="#cb6-212" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 </div>
 </div>
 

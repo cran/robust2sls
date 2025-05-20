@@ -51,7 +51,7 @@ overflow: visible;
 </style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -62,7 +62,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -121,13 +121,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
   for (var i = 0; i < sheets.length; i++) {
     if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
     try { var rules = sheets[i].cssRules; } catch (e) { continue; }
-    for (var j = 0; j < rules.length; j++) {
+    var j = 0;
+    while (j < rules.length) {
       var rule = rules[j];
       // check if there is a div.sourceCode rule
-      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -525,44 +532,44 @@ assumption, such as the validity and informativeness of the instruments.
 Based on the random parameter setup, we also create some random
 artificial data <code>generate_data()</code>, with which we will work
 throughout this section. We create a sample of 1,000 data points.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>param <span class="ot">&lt;-</span> <span class="fu">generate_param</span>(<span class="at">dx1 =</span> <span class="dv">1</span>, <span class="at">dx2 =</span> <span class="dv">1</span>, <span class="at">dz2 =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="cn">TRUE</span>, <span class="at">beta =</span> <span class="fu">c</span>(<span class="dv">2</span>,<span class="sc">-</span><span class="dv">1</span>), <span class="at">sigma =</span> <span class="dv">1</span>, <span class="at">seed =</span> <span class="dv">2</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>data_full <span class="ot">&lt;-</span> <span class="fu">generate_data</span>(<span class="at">parameters =</span> param, <span class="at">n =</span> <span class="dv">1000</span>)<span class="sc">$</span>data</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># have a look at the data</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(data_full)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;            y x1        x2          u x1          z2 r1         r2</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 -0.8047759  1 1.4984397 -1.3063362  1  0.59545164  0  0.1380329</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  0.2101148  1 1.4894080 -0.3004772  1  0.02161768  0  0.5823300</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3  1.5154352  1 0.8977204  0.4131555  1  0.93773336  0 -0.7330890</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  2.1006106  1 0.8447688  0.9453794  1  0.49601221  0 -0.4370809</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5  0.3822698  1 1.2154664 -0.4022639  1 -0.06204087  0  0.3744787</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6  1.4367715  1 2.3234290  1.7602006  1  0.26107165  0  1.2271824</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>param <span class="ot">&lt;-</span> <span class="fu">generate_param</span>(<span class="at">dx1 =</span> <span class="dv">1</span>, <span class="at">dx2 =</span> <span class="dv">1</span>, <span class="at">dz2 =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="cn">TRUE</span>, <span class="at">beta =</span> <span class="fu">c</span>(<span class="dv">2</span>,<span class="sc">-</span><span class="dv">1</span>), <span class="at">sigma =</span> <span class="dv">1</span>, <span class="at">seed =</span> <span class="dv">2</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>data_full <span class="ot">&lt;-</span> <span class="fu">generate_data</span>(<span class="at">parameters =</span> param, <span class="at">n =</span> <span class="dv">1000</span>)<span class="sc">$</span>data</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co"># have a look at the data</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">head</span>(data_full)</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co">#&gt;            y x1        x2          u x1          z2 r1         r2</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co">#&gt; 1 -0.8047759  1 1.4984397 -1.3063362  1  0.59545164  0  0.1380329</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#&gt; 2  0.2101148  1 1.4894080 -0.3004772  1  0.02161768  0  0.5823300</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co">#&gt; 3  1.5154352  1 0.8977204  0.4131555  1  0.93773336  0 -0.7330890</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt; 4  2.1006106  1 0.8447688  0.9453794  1  0.49601221  0 -0.4370809</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co">#&gt; 5  0.3822698  1 1.2154664 -0.4022639  1 -0.06204087  0  0.3744787</span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co">#&gt; 6  1.4367715  1 2.3234290  1.7602006  1  0.26107165  0  1.2271824</span></span></code></pre></div>
 <p>In reality, the researcher would only observe <span class="math inline">\(y\)</span>, <span class="math inline">\(x_{1}\)</span> (intercept), <span class="math inline">\(x_{2}\)</span> (endogenous), and <span class="math inline">\(z_{2}\)</span> (instrument). We have created data
 from the following structural equation:</p>
 <p><span class="math display">\[ y_{i} = x_{i}^{\prime} \beta + u_{i} =
 \beta_{1} x_{1} + \beta_{2} x_{2} + u_{i} = 2 - x_{2} + u_{i}.\]</span>
 We can quickly check whether the assumptions are approximately fulfilled
 in our finite sample.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cor</span>(data_full<span class="sc">$</span>u, data_full<span class="sc">$</span>x2) <span class="co"># correlation for endogenous regressor</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 0.3262246</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cor</span>(data_full<span class="sc">$</span>u, data_full<span class="sc">$</span>z2) <span class="co"># close to zero correlation for valid instrument</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 0.03581895</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cor</span>(data_full<span class="sc">$</span>x2, data_full<span class="sc">$</span>z2) <span class="co"># correlation for informativeness</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 0.6392398</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">cor</span>(data_full<span class="sc">$</span>u, data_full<span class="sc">$</span>x2) <span class="co"># correlation for endogenous regressor</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co">#&gt; [1] 0.3262246</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">cor</span>(data_full<span class="sc">$</span>u, data_full<span class="sc">$</span>z2) <span class="co"># close to zero correlation for valid instrument</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; [1] 0.03581895</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="fu">cor</span>(data_full<span class="sc">$</span>x2, data_full<span class="sc">$</span>z2) <span class="co"># correlation for informativeness</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; [1] 0.6392398</span></span></code></pre></div>
 <p>We can also compare 2SLS to OLS and see how close their estimates are
 to the true parameters <span class="math inline">\(\beta^{\prime} =
 \begin{pmatrix} 2 &amp; -1 \end{pmatrix}\)</span>.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>fml_ols <span class="ot">&lt;-</span> y <span class="sc">~</span> x2</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>ols <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="at">formula =</span> fml_ols, <span class="at">data =</span> data_full[, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>])</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(ols<span class="sc">$</span>coefficients)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (Intercept)          x2 </span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   1.4885804  -0.6018424</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>fml_tsls <span class="ot">&lt;-</span> y <span class="sc">~</span> x2 <span class="sc">|</span> z2</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>tsls <span class="ot">&lt;-</span> <span class="fu">ivreg</span>(<span class="at">formula =</span> fml_tsls, <span class="at">data =</span> data_full[, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">6</span>)])</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(tsls<span class="sc">$</span>coefficients)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (Intercept)          x2 </span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   1.9521846  -0.9316108</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>fml_ols <span class="ot">&lt;-</span> y <span class="sc">~</span> x2</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>ols <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="at">formula =</span> fml_ols, <span class="at">data =</span> data_full[, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>])</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">print</span>(ols<span class="sc">$</span>coefficients)</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; (Intercept)          x2 </span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt;   1.4885804  -0.6018424</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>fml_tsls <span class="ot">&lt;-</span> y <span class="sc">~</span> x2 <span class="sc">|</span> z2</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>tsls <span class="ot">&lt;-</span> <span class="fu">ivreg</span>(<span class="at">formula =</span> fml_tsls, <span class="at">data =</span> data_full[, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">6</span>)])</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="fu">print</span>(tsls<span class="sc">$</span>coefficients)</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; (Intercept)          x2 </span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt;   1.9521846  -0.9316108</span></span></code></pre></div>
 <p>As expected, we clearly see that 2SLS provides estimates closer to
 the true DGP than OLS.</p>
 </div>
@@ -581,31 +588,31 @@ initial estimator. Let us use an expected false outlier detection rate,
 <span class="math inline">\(\gamma_{c}\)</span>, of 1% so that we expect
 to find <span class="math inline">\(1000 \times 0.01 = 10\)</span>
 outliers even though there are technically none in the sample.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># extract the variables we observe</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(data_full[, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">6</span>)])</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># not iterating the algorithm</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>robustified_0 <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, <span class="at">iterations =</span> <span class="dv">0</span>)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(robustified_0)</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  robustified </span></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Iterations:  0 </span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  13     Outliers proportion:  0.013</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co"># iterating algorithm until convergence</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>robustified_conv <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, </span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">iterations =</span> <span class="st">&quot;convergence&quot;</span>, <span class="at">convergence_criterion =</span> <span class="dv">0</span>)</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(robustified_conv)</span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  robustified </span></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Iterations:  3 </span></span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  15     Outliers proportion:  0.015</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># extract the variables we observe</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(data_full[, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">6</span>)])</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co"># not iterating the algorithm</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>robustified_0 <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>                                   <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, <span class="at">iterations =</span> <span class="dv">0</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="fu">print</span>(robustified_0)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  robustified </span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; Iterations:  0 </span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  13     Outliers proportion:  0.013</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co"># iterating algorithm until convergence</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>robustified_conv <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>                                      <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, </span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>                                      <span class="at">iterations =</span> <span class="st">&quot;convergence&quot;</span>, <span class="at">convergence_criterion =</span> <span class="dv">0</span>)</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="fu">print</span>(robustified_conv)</span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  robustified </span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt; Iterations:  3 </span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  15     Outliers proportion:  0.015</span></span></code></pre></div>
 <p><code>outlier_detection()</code> returns an object of class
 <code>&quot;robust2sls&quot;</code>, which is a list that saves - inter alia - the
 settings of the algorithm, the 2SLS models for each iteration, and
@@ -622,8 +629,8 @@ or simply because there just happened to be more unusual draws of the
 error in our finite sample than expected. Since we are working with
 artificial data that we have created ourselves, we can actually check
 how many true errors were larger than <span class="math inline">\(2.58\)</span> or smaller than <span class="math inline">\(-2.58\)</span>.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(<span class="fu">abs</span>(data_full[, <span class="st">&quot;u&quot;</span>]) <span class="sc">&gt;</span> <span class="fl">2.58</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 15</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">sum</span>(<span class="fu">abs</span>(data_full[, <span class="st">&quot;u&quot;</span>]) <span class="sc">&gt;</span> <span class="fl">2.58</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; [1] 15</span></span></code></pre></div>
 <p>We find that there were 15 true errors that we would technically
 classify as outliers, of which we detected 13 or 15, respectively. We
 can also check whether we identified those observations with large true
@@ -635,31 +642,31 @@ outlier (<code>0</code>) or not (<code>1</code>) or whether the
 observation was not used in the estimation for other reasons, such as a
 missing value in <span class="math inline">\(y\)</span>, <span class="math inline">\(x\)</span>, or <span class="math inline">\(z\)</span> (<code>-1</code>). This information is
 stored for each iteration.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># which observations had large true errors?</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>large_true <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">abs</span>(data_full[, <span class="st">&quot;u&quot;</span>]) <span class="sc">&gt;</span> <span class="fl">2.58</span>)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># which observations were detected as outliers</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># both step 0 and iterated version had same starting point, so same initial classification</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>large_detected_0 <span class="ot">&lt;-</span> <span class="fu">which</span>(robustified_conv<span class="sc">$</span>type<span class="sc">$</span>m0 <span class="sc">==</span> <span class="dv">0</span>)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>large_detected_3 <span class="ot">&lt;-</span> <span class="fu">which</span>(robustified_conv<span class="sc">$</span>type<span class="sc">$</span>m3 <span class="sc">==</span> <span class="dv">0</span>)</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co"># how much do the sets of true and detected large errors overlap?</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(large_detected_0 <span class="sc">%in%</span> large_true) <span class="co"># 12 of the 13 detected outliers really had large errors</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 12</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(large_detected_3 <span class="sc">%in%</span> large_true) <span class="co"># 13 of the 15 detected outliers really had large errors</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 13</span></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="co"># which were wrongly detected as having large errors?</span></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>ind <span class="ot">&lt;-</span> large_detected_3[<span class="fu">which</span>(<span class="sc">!</span>(large_detected_3 <span class="sc">%in%</span> large_true))]</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co"># what were their true error values?</span></span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>data_full[ind, <span class="st">&quot;u&quot;</span>] <span class="co"># relatively large values even though technically smaller than cut-off</span></span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1]  2.443443 -2.512298</span></span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co"># which large true errors were missed?</span></span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>ind2 <span class="ot">&lt;-</span> large_true[<span class="fu">which</span>(<span class="sc">!</span>(large_true <span class="sc">%in%</span> large_detected_3))]</span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="co"># what were their true error values?</span></span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>data_full[ind2, <span class="st">&quot;u&quot;</span>] <span class="co"># one of them is close to the cut-off</span></span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] -2.580791  2.675392</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># which observations had large true errors?</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>large_true <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">abs</span>(data_full[, <span class="st">&quot;u&quot;</span>]) <span class="sc">&gt;</span> <span class="fl">2.58</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co"># which observations were detected as outliers</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co"># both step 0 and iterated version had same starting point, so same initial classification</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>large_detected_0 <span class="ot">&lt;-</span> <span class="fu">which</span>(robustified_conv<span class="sc">$</span>type<span class="sc">$</span>m0 <span class="sc">==</span> <span class="dv">0</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>large_detected_3 <span class="ot">&lt;-</span> <span class="fu">which</span>(robustified_conv<span class="sc">$</span>type<span class="sc">$</span>m3 <span class="sc">==</span> <span class="dv">0</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co"># how much do the sets of true and detected large errors overlap?</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="fu">sum</span>(large_detected_0 <span class="sc">%in%</span> large_true) <span class="co"># 12 of the 13 detected outliers really had large errors</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; [1] 12</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="fu">sum</span>(large_detected_3 <span class="sc">%in%</span> large_true) <span class="co"># 13 of the 15 detected outliers really had large errors</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; [1] 13</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co"># which were wrongly detected as having large errors?</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>ind <span class="ot">&lt;-</span> large_detected_3[<span class="fu">which</span>(<span class="sc">!</span>(large_detected_3 <span class="sc">%in%</span> large_true))]</span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co"># what were their true error values?</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a>data_full[ind, <span class="st">&quot;u&quot;</span>] <span class="co"># relatively large values even though technically smaller than cut-off</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; [1]  2.443443 -2.512298</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co"># which large true errors were missed?</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a>ind2 <span class="ot">&lt;-</span> large_true[<span class="fu">which</span>(<span class="sc">!</span>(large_true <span class="sc">%in%</span> large_detected_3))]</span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co"># what were their true error values?</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a>data_full[ind2, <span class="st">&quot;u&quot;</span>] <span class="co"># one of them is close to the cut-off</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; [1] -2.580791  2.675392</span></span></code></pre></div>
 <p>All in all, the algorithm performed as expected.</p>
 </div>
 <div id="saturated-2sls" class="section level3">
@@ -673,34 +680,34 @@ standardized residuals are compared to the chosen cut-off value. The
 determines the relative size of each sub-sample. Especially with small
 samples, the split should be chosen such that none of the sub-samples is
 <em>too small</em>.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># not iterating the algorithm</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>saturated_0 <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;saturated&quot;</span>, <span class="at">iterations =</span> <span class="dv">0</span>,</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">split =</span> <span class="fl">0.5</span>)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(saturated_0)</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  saturated </span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Iterations:  0 </span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  10     Outliers proportion:  0.01</span></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co"># iterating algorithm until convergence</span></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>saturated_conv <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;saturated&quot;</span>, <span class="at">split =</span> <span class="fl">0.5</span>,</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">iterations =</span> <span class="st">&quot;convergence&quot;</span>, <span class="at">convergence_criterion =</span> <span class="dv">0</span>)</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(saturated_conv)</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  saturated </span></span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Iterations:  4 </span></span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  15     Outliers proportion:  0.015</span></span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="co"># which did it find in final selection?</span></span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>large_detected_4 <span class="ot">&lt;-</span> <span class="fu">which</span>(saturated_conv<span class="sc">$</span>type<span class="sc">$</span>m4 <span class="sc">==</span> <span class="dv">0</span>)</span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="fu">identical</span>(large_detected_3, large_detected_4)</span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># not iterating the algorithm</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>saturated_0 <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>                                 <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;saturated&quot;</span>, <span class="at">iterations =</span> <span class="dv">0</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>                                 <span class="at">split =</span> <span class="fl">0.5</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="fu">print</span>(saturated_0)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  saturated </span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; Iterations:  0 </span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  10     Outliers proportion:  0.01</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co"># iterating algorithm until convergence</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>saturated_conv <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>                                    <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;saturated&quot;</span>, <span class="at">split =</span> <span class="fl">0.5</span>,</span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>                                    <span class="at">iterations =</span> <span class="st">&quot;convergence&quot;</span>, <span class="at">convergence_criterion =</span> <span class="dv">0</span>)</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="fu">print</span>(saturated_conv)</span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  saturated </span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; Iterations:  4 </span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  15     Outliers proportion:  0.015</span></span>
+<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a></span>
+<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a><span class="co"># which did it find in final selection?</span></span>
+<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a>large_detected_4 <span class="ot">&lt;-</span> <span class="fu">which</span>(saturated_conv<span class="sc">$</span>type<span class="sc">$</span>m4 <span class="sc">==</span> <span class="dv">0</span>)</span>
+<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a><span class="fu">identical</span>(large_detected_3, large_detected_4)</span>
+<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 <p>Saturated 2SLS finds 10 outliers initially, which is exactly what we
 would expect. Once we iterate, it also finds 15 outliers as Robustified
 2SLS did. In fact, the converged Saturated 2SLS classified exactly the
@@ -722,27 +729,27 @@ are indicated by <code>H0</code>. We look at the results from the
 converged Robust 2SLS algorithm. The algorithm converged after 3
 iterations, so we can either use the correction factor for iteration 3
 or for the fixed point.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># final model (iteration 3) without corrected standard errors</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(robustified_conv<span class="sc">$</span>model<span class="sc">$</span>m3)<span class="sc">$</span>coef</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;              Estimate Std. Error   t value     Pr(&gt;|t|)</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (Intercept)  1.892708 0.08397759  22.53825 5.226824e-91</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; x2          -0.890967 0.05571580 -15.99128 2.454974e-51</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;df&quot;)</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 983</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;nobs&quot;)</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 985</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co"># final model with corrected standard errors, m = 3 (subset of output)</span></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="fu">beta_inf</span>(robustified_conv, <span class="at">iteration =</span> <span class="dv">3</span>, <span class="at">exact =</span> <span class="cn">TRUE</span>)[, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;              Estimate Std. Error H0Std. Error   t value H0t value</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (Intercept)  1.892708 0.08397759   0.09057768  22.53825  20.89596</span></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; x2          -0.890967 0.05571580   0.06009470 -15.99128 -14.82605</span></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="co"># final model with corrected standard errors, m = &quot;fixed point&quot; / &quot;converged&quot; (subset of output)</span></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="fu">beta_inf</span>(robustified_conv, <span class="at">iteration =</span> <span class="dv">3</span>, <span class="at">exact =</span> <span class="cn">TRUE</span>, <span class="at">fp =</span> <span class="cn">TRUE</span>)[, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;              Estimate Std. Error H0Std. Error   t value H0t value</span></span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (Intercept)  1.892708 0.08397759   0.09058094  22.53825  20.89521</span></span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; x2          -0.890967 0.05571580   0.06009686 -15.99128 -14.82552</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># final model (iteration 3) without corrected standard errors</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">summary</span>(robustified_conv<span class="sc">$</span>model<span class="sc">$</span>m3)<span class="sc">$</span>coef</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt;              Estimate Std. Error   t value     Pr(&gt;|t|)</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; (Intercept)  1.892708 0.08397759  22.53825 5.226824e-91</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; x2          -0.890967 0.05571580 -15.99128 2.454974e-51</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;df&quot;)</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; [1] 983</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;nobs&quot;)</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; [1] 985</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co"># final model with corrected standard errors, m = 3 (subset of output)</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="fu">beta_inf</span>(robustified_conv, <span class="at">iteration =</span> <span class="dv">3</span>, <span class="at">exact =</span> <span class="cn">TRUE</span>)[, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt;              Estimate Std. Error H0Std. Error   t value H0t value</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; (Intercept)  1.892708 0.08397759   0.09057768  22.53825  20.89596</span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; x2          -0.890967 0.05571580   0.06009470 -15.99128 -14.82605</span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co"># final model with corrected standard errors, m = &quot;fixed point&quot; / &quot;converged&quot; (subset of output)</span></span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="fu">beta_inf</span>(robustified_conv, <span class="at">iteration =</span> <span class="dv">3</span>, <span class="at">exact =</span> <span class="cn">TRUE</span>, <span class="at">fp =</span> <span class="cn">TRUE</span>)[, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt;              Estimate Std. Error H0Std. Error   t value H0t value</span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt; (Intercept)  1.892708 0.08397759   0.09058094  22.53825  20.89521</span></span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="co">#&gt; x2          -0.890967 0.05571580   0.06009686 -15.99128 -14.82552</span></span></code></pre></div>
 <p>We can see that the standard inference leads to smaller standard
 errors, potentially overstating statistical significance because it
 ignores the preceding selection. For the corrected inference, there is
@@ -751,15 +758,15 @@ iteration 3 or using the correction factor for the fixed point.</p>
 <p>Instead of corrected standard errors, the researcher could also use
 bootstrapped standard errors for inference. This functionality is still
 under development.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># use case re-sampling (to save time, use low iteration m = 1)</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>resampling <span class="ot">&lt;-</span> <span class="fu">case_resampling</span>(robustified_conv, <span class="at">R =</span> <span class="dv">1000</span>, <span class="at">m =</span> <span class="dv">1</span>)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>beta_boot <span class="ot">&lt;-</span> <span class="fu">evaluate_boot</span>(resampling, <span class="at">iterations =</span> <span class="dv">1</span>)</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>mat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(beta_boot[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], <span class="at">ncol =</span> <span class="dv">1</span>, <span class="at">nrow =</span> <span class="dv">2</span>) <span class="co"># show subset, put into column vector</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(mat) <span class="ot">&lt;-</span> <span class="st">&quot;bootStd. Error&quot;</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">cbind</span>(<span class="fu">beta_inf</span>(robustified_conv, <span class="at">iteration =</span> <span class="dv">1</span>, <span class="at">exact =</span> <span class="cn">TRUE</span>)[, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>], mat)</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;             Estimate   Std. Error H0Std. Error bootStd. Error</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (Intercept) 1.899757   0.08448197 0.09065763   0.09817717    </span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; x2          -0.8922874 0.05611039 0.06021208   0.06326314</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># use case re-sampling (to save time, use low iteration m = 1)</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>resampling <span class="ot">&lt;-</span> <span class="fu">case_resampling</span>(robustified_conv, <span class="at">R =</span> <span class="dv">1000</span>, <span class="at">m =</span> <span class="dv">1</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>beta_boot <span class="ot">&lt;-</span> <span class="fu">evaluate_boot</span>(resampling, <span class="at">iterations =</span> <span class="dv">1</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>mat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(beta_boot[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], <span class="at">ncol =</span> <span class="dv">1</span>, <span class="at">nrow =</span> <span class="dv">2</span>) <span class="co"># show subset, put into column vector</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="fu">colnames</span>(mat) <span class="ot">&lt;-</span> <span class="st">&quot;bootStd. Error&quot;</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="fu">cbind</span>(<span class="fu">beta_inf</span>(robustified_conv, <span class="at">iteration =</span> <span class="dv">1</span>, <span class="at">exact =</span> <span class="cn">TRUE</span>)[, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>], mat)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt;             Estimate   Std. Error H0Std. Error bootStd. Error</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; (Intercept) 1.899757   0.08448197 0.09065763   0.09817717    </span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; x2          -0.8922874 0.05611039 0.06021208   0.06326314</span></span></code></pre></div>
 </div>
 <div id="testing-for-difference-in-coefficient-estimates" class="section level2">
 <h2>Testing for difference in coefficient estimates</h2>
@@ -768,28 +775,28 @@ under development.</p>
 between the full sample and trimmed sample coefficient estimates is
 statistically significant. The test can be used on subsets of the
 coefficient vector or the whole vector itself.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># t-test on a single coefficient</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># testing difference in beta_2 (coef on endogenous regressor x2), m = 3</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="fu">beta_t</span>(robustified_conv, <span class="at">iteration =</span> <span class="dv">3</span>, <span class="at">element =</span> <span class="st">&quot;x2&quot;</span>)</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    robust m = 3       full    se diff  t value   Pr(&gt;|z|)      Pr(&gt;z)    Pr(&lt;z)</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; x2    -0.890967 -0.9316108 0.01746118 2.327666 0.01992983 0.009964916 0.9900351</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;type of avar&quot;)</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;iteration m = 3&quot;</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="co"># testing difference in beta_2 (coef on endogenous regressor x2), m = &quot;fixed point&quot;</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="fu">beta_t</span>(robustified_conv, <span class="at">iteration =</span> <span class="dv">3</span>, <span class="at">element =</span> <span class="st">&quot;x2&quot;</span>, <span class="at">fp =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    robust m = 3       full    se diff  t value   Pr(&gt;|z|)      Pr(&gt;z)    Pr(&lt;z)</span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; x2    -0.890967 -0.9316108 0.01746862 2.326675 0.01998259 0.009991294 0.9900087</span></span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;type of avar&quot;)</span></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;fixed point&quot;</span></span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Hausman-type test on whole coefficient vector, m = 3</span></span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="fu">beta_hausman</span>(robustified_conv, <span class="at">iteration =</span> <span class="dv">3</span>)</span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      Hausman test    p value</span></span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1,]     5.475185 0.06472597</span></span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;type of avar&quot;)</span></span>
-<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;iteration m = 3&quot;</span></span>
-<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;coefficients&quot;)</span></span>
-<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(Intercept)&quot; &quot;x2&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># t-test on a single coefficient</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co"># testing difference in beta_2 (coef on endogenous regressor x2), m = 3</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">beta_t</span>(robustified_conv, <span class="at">iteration =</span> <span class="dv">3</span>, <span class="at">element =</span> <span class="st">&quot;x2&quot;</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt;    robust m = 3       full    se diff  t value   Pr(&gt;|z|)      Pr(&gt;z)    Pr(&lt;z)</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; x2    -0.890967 -0.9316108 0.01746118 2.327666 0.01992983 0.009964916 0.9900351</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;type of avar&quot;)</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;iteration m = 3&quot;</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co"># testing difference in beta_2 (coef on endogenous regressor x2), m = &quot;fixed point&quot;</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="fu">beta_t</span>(robustified_conv, <span class="at">iteration =</span> <span class="dv">3</span>, <span class="at">element =</span> <span class="st">&quot;x2&quot;</span>, <span class="at">fp =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt;    robust m = 3       full    se diff  t value   Pr(&gt;|z|)      Pr(&gt;z)    Pr(&lt;z)</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; x2    -0.890967 -0.9316108 0.01746862 2.326675 0.01998259 0.009991294 0.9900087</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;type of avar&quot;)</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; [1] &quot;fixed point&quot;</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co"># Hausman-type test on whole coefficient vector, m = 3</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="fu">beta_hausman</span>(robustified_conv, <span class="at">iteration =</span> <span class="dv">3</span>)</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt;      Hausman test    p value</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; [1,]     5.475185 0.06472597</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;type of avar&quot;)</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; [1] &quot;iteration m = 3&quot;</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;coefficients&quot;)</span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(Intercept)&quot; &quot;x2&quot;</span></span></code></pre></div>
 <p>While the difference between <span class="math inline">\(\widehat{\beta}_{2}^{(0) = full}\)</span> and
 <span class="math inline">\(\widehat{\beta}_{2}^{(3)}\)</span> is
 statistically significant at the 5% significance level using a t-test,
@@ -807,78 +814,78 @@ deterministic outliers, i.e. by setting their errors to a large value.
 We populate 3% of the sample with outliers, i.e. 30 outliers. The
 location of the outliers is random. The size of their errors is either
 -3.5 or 3.5, which is also determined randomly.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>data_full_contaminated <span class="ot">&lt;-</span> data_full</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>outlier_location <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">NROW</span>(data_full), <span class="at">size =</span> <span class="fl">0.03</span><span class="sc">*</span><span class="fu">NROW</span>(data_full), <span class="at">replace =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>outlier_size <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="fl">3.5</span>, <span class="fl">3.5</span>), <span class="at">size =</span> <span class="fu">length</span>(outlier_location), <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="co"># replace errors</span></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>data_full_contaminated[outlier_location, <span class="st">&quot;u&quot;</span>] <span class="ot">&lt;-</span> outlier_size</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># replace value of dependent variable</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>data_full_contaminated[outlier_location, <span class="st">&quot;y&quot;</span>] <span class="ot">&lt;-</span> data_full_contaminated[outlier_location, <span class="st">&quot;y&quot;</span>] <span class="sc">-</span> </span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>                                                  data_full[outlier_location, <span class="st">&quot;u&quot;</span>] <span class="sc">+</span> </span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>                                                  data_full_contaminated[outlier_location, <span class="st">&quot;u&quot;</span>]</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="co"># extract the data that researcher would actually collect</span></span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>data_cont <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(data_full_contaminated[, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">6</span>)])</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>data_full_contaminated <span class="ot">&lt;-</span> data_full</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>outlier_location <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">NROW</span>(data_full), <span class="at">size =</span> <span class="fl">0.03</span><span class="sc">*</span><span class="fu">NROW</span>(data_full), <span class="at">replace =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>outlier_size <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="fl">3.5</span>, <span class="fl">3.5</span>), <span class="at">size =</span> <span class="fu">length</span>(outlier_location), <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co"># replace errors</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>data_full_contaminated[outlier_location, <span class="st">&quot;u&quot;</span>] <span class="ot">&lt;-</span> outlier_size</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co"># replace value of dependent variable</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>data_full_contaminated[outlier_location, <span class="st">&quot;y&quot;</span>] <span class="ot">&lt;-</span> data_full_contaminated[outlier_location, <span class="st">&quot;y&quot;</span>] <span class="sc">-</span> </span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>                                                  data_full[outlier_location, <span class="st">&quot;u&quot;</span>] <span class="sc">+</span> </span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>                                                  data_full_contaminated[outlier_location, <span class="st">&quot;u&quot;</span>]</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co"># extract the data that researcher would actually collect</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>data_cont <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(data_full_contaminated[, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">6</span>)])</span></code></pre></div>
 </div>
 <div id="outlier-detection-1" class="section level2">
 <h2>Outlier detection</h2>
 <div id="robustified-2sls-1" class="section level3">
 <h3>Robustified 2SLS</h3>
 <p>We use the same algorithm setup as before.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># not iterating the algorithm</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>robustified_0 <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data_cont, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, <span class="at">iterations =</span> <span class="dv">0</span>)</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(robustified_0)</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  robustified </span></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Iterations:  0 </span></span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  31     Outliers proportion:  0.031</span></span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="co"># iterating algorithm until convergence</span></span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>robustified_conv <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data_cont, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, </span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">iterations =</span> <span class="st">&quot;convergence&quot;</span>, <span class="at">convergence_criterion =</span> <span class="dv">0</span>)</span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(robustified_conv)</span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  robustified </span></span>
-<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
-<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
-<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Iterations:  7 </span></span>
-<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  45     Outliers proportion:  0.045</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># not iterating the algorithm</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>robustified_0 <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data_cont, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>                                   <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, <span class="at">iterations =</span> <span class="dv">0</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="fu">print</span>(robustified_0)</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  robustified </span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt; Iterations:  0 </span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  31     Outliers proportion:  0.031</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co"># iterating algorithm until convergence</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>robustified_conv <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data_cont, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>                                      <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;robustified&quot;</span>, </span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>                                      <span class="at">iterations =</span> <span class="st">&quot;convergence&quot;</span>, <span class="at">convergence_criterion =</span> <span class="dv">0</span>)</span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="fu">print</span>(robustified_conv)</span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  robustified </span></span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a><span class="co">#&gt; Iterations:  7 </span></span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  45     Outliers proportion:  0.045</span></span></code></pre></div>
 <p>The initial selection finds 31 outliers, close to the 30
 deterministic outliers that we put into the model. The algorithm
 converges after 7 iterations and ultimately classifies 45 observations
 as outliers. Again, this might well be because even under the normal
 distribution of the regular errors, we have draws that are beyond the
 cut-off.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># which observations were classified as outliers?</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>detected_0 <span class="ot">&lt;-</span> <span class="fu">which</span>(robustified_conv<span class="sc">$</span>type<span class="sc">$</span>m0 <span class="sc">==</span> <span class="dv">0</span>)</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>detected_7 <span class="ot">&lt;-</span> <span class="fu">which</span>(robustified_conv<span class="sc">$</span>type<span class="sc">$</span>m7 <span class="sc">==</span> <span class="dv">0</span>)</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co"># overlap between deterministic outliers</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(outlier_location <span class="sc">%in%</span> detected_0) <span class="co"># initial found all 30 (+1 in addition)</span></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 30</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(outlier_location <span class="sc">%in%</span> detected_7) <span class="co"># converged found all 30 (+ 15 in addition)</span></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 30</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># which observations were classified as outliers?</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>detected_0 <span class="ot">&lt;-</span> <span class="fu">which</span>(robustified_conv<span class="sc">$</span>type<span class="sc">$</span>m0 <span class="sc">==</span> <span class="dv">0</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>detected_7 <span class="ot">&lt;-</span> <span class="fu">which</span>(robustified_conv<span class="sc">$</span>type<span class="sc">$</span>m7 <span class="sc">==</span> <span class="dv">0</span>)</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co"># overlap between deterministic outliers</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="fu">sum</span>(outlier_location <span class="sc">%in%</span> detected_0) <span class="co"># initial found all 30 (+1 in addition)</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; [1] 30</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="fu">sum</span>(outlier_location <span class="sc">%in%</span> detected_7) <span class="co"># converged found all 30 (+ 15 in addition)</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt; [1] 30</span></span></code></pre></div>
 <p>Let us now compare the coefficient estimates between the contaminated
 full sample model and the Robustified 2SLS estimates.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># full sample model</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>tsls_cont <span class="ot">&lt;-</span> <span class="fu">ivreg</span>(<span class="at">formula =</span> fml_tsls, <span class="at">data =</span> data_cont)</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>tsls_cont<span class="sc">$</span>coefficients</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (Intercept)          x2 </span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   1.9100942  -0.8984509</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co"># updated estimates after initial classification and removal of outliers</span></span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>robustified_conv<span class="sc">$</span>model<span class="sc">$</span>m1<span class="sc">$</span>coefficients</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (Intercept)          x2 </span></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   1.9622405  -0.9373524</span></span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="co"># updated estimates after convergence</span></span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>robustified_conv<span class="sc">$</span>model<span class="sc">$</span>m7<span class="sc">$</span>coefficients</span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (Intercept)          x2 </span></span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   1.9083319  -0.9030388</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># full sample model</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>tsls_cont <span class="ot">&lt;-</span> <span class="fu">ivreg</span>(<span class="at">formula =</span> fml_tsls, <span class="at">data =</span> data_cont)</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>tsls_cont<span class="sc">$</span>coefficients</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; (Intercept)          x2 </span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt;   1.9100942  -0.8984509</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co"># updated estimates after initial classification and removal of outliers</span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>robustified_conv<span class="sc">$</span>model<span class="sc">$</span>m1<span class="sc">$</span>coefficients</span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt; (Intercept)          x2 </span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co">#&gt;   1.9622405  -0.9373524</span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co"># updated estimates after convergence</span></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>robustified_conv<span class="sc">$</span>model<span class="sc">$</span>m7<span class="sc">$</span>coefficients</span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a><span class="co">#&gt; (Intercept)          x2 </span></span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="co">#&gt;   1.9083319  -0.9030388</span></span></code></pre></div>
 <p>In the present setting, the contamination of the model made the full
 sample estimates of the model slightly worse compared to the estimates
 based on the non-contaminated sample. The model that applies the
@@ -888,48 +895,48 @@ the full sample estimates.</p>
 <p>We now also see a clearer difference between the corrected and the
 uncorrected standard errors. The corrected standard errors are close to
 the bootstrap standard error.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># use case re-sampling (to save time, use low iteration m = 1)</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>resampling <span class="ot">&lt;-</span> <span class="fu">case_resampling</span>(robustified_conv, <span class="at">R =</span> <span class="dv">1000</span>, <span class="at">m =</span> <span class="dv">1</span>)</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>beta_boot <span class="ot">&lt;-</span> <span class="fu">evaluate_boot</span>(resampling, <span class="at">iterations =</span> <span class="dv">1</span>)</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>mat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(beta_boot[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], <span class="at">ncol =</span> <span class="dv">1</span>, <span class="at">nrow =</span> <span class="dv">2</span>) <span class="co"># show subset, put into column vector</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(mat) <span class="ot">&lt;-</span> <span class="st">&quot;bootStd. Error&quot;</span></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="fu">cbind</span>(<span class="fu">beta_inf</span>(robustified_conv, <span class="at">iteration =</span> <span class="dv">1</span>, <span class="at">exact =</span> <span class="cn">TRUE</span>)[, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>], mat)</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;             Estimate   Std. Error H0Std. Error bootStd. Error</span></span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (Intercept) 1.962241   0.09142263 0.09720696   0.09693482    </span></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; x2          -0.9373524 0.06086466 0.06471558   0.06556386</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># use case re-sampling (to save time, use low iteration m = 1)</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>resampling <span class="ot">&lt;-</span> <span class="fu">case_resampling</span>(robustified_conv, <span class="at">R =</span> <span class="dv">1000</span>, <span class="at">m =</span> <span class="dv">1</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>beta_boot <span class="ot">&lt;-</span> <span class="fu">evaluate_boot</span>(resampling, <span class="at">iterations =</span> <span class="dv">1</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>mat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(beta_boot[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], <span class="at">ncol =</span> <span class="dv">1</span>, <span class="at">nrow =</span> <span class="dv">2</span>) <span class="co"># show subset, put into column vector</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="fu">colnames</span>(mat) <span class="ot">&lt;-</span> <span class="st">&quot;bootStd. Error&quot;</span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="fu">cbind</span>(<span class="fu">beta_inf</span>(robustified_conv, <span class="at">iteration =</span> <span class="dv">1</span>, <span class="at">exact =</span> <span class="cn">TRUE</span>)[, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>], mat)</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt;             Estimate   Std. Error H0Std. Error bootStd. Error</span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt; (Intercept) 1.962241   0.09142263 0.09720696   0.09693482    </span></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co">#&gt; x2          -0.9373524 0.06086466 0.06471558   0.06556386</span></span></code></pre></div>
 </div>
 <div id="saturated-2sls-1" class="section level3">
 <h3>Saturated 2SLS</h3>
 <p>Finally, we also check the performance of the Saturated 2SLS
 algorithm.</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># not iterating the algorithm</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>saturated_0 <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data_cont, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;saturated&quot;</span>, <span class="at">iterations =</span> <span class="dv">0</span>,</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">split =</span> <span class="fl">0.5</span>)</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(saturated_0)</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  saturated </span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Iterations:  0 </span></span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  32     Outliers proportion:  0.032</span></span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="co"># iterating algorithm until convergence</span></span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>saturated_conv <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data_cont, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;saturated&quot;</span>, <span class="at">split =</span> <span class="fl">0.5</span>,</span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>                                    <span class="at">iterations =</span> <span class="st">&quot;convergence&quot;</span>, <span class="at">convergence_criterion =</span> <span class="dv">0</span>)</span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(saturated_conv)</span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
-<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  saturated </span></span>
-<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
-<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
-<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Iterations:  7 </span></span>
-<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  45     Outliers proportion:  0.045</span></span>
-<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="co"># which did it find in final selection?</span></span>
-<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>detected_7_sat <span class="ot">&lt;-</span> <span class="fu">which</span>(saturated_conv<span class="sc">$</span>type<span class="sc">$</span>m7 <span class="sc">==</span> <span class="dv">0</span>)</span>
-<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a><span class="fu">identical</span>(detected_7, detected_7_sat)</span>
-<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># not iterating the algorithm</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>saturated_0 <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data_cont, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>                                 <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;saturated&quot;</span>, <span class="at">iterations =</span> <span class="dv">0</span>,</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>                                 <span class="at">split =</span> <span class="fl">0.5</span>)</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="fu">print</span>(saturated_0)</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  saturated </span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="co">#&gt; Iterations:  0 </span></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  32     Outliers proportion:  0.032</span></span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a><span class="co"># iterating algorithm until convergence</span></span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a>saturated_conv <span class="ot">&lt;-</span> <span class="fu">outlier_detection</span>(<span class="at">data =</span> data_cont, <span class="at">formula =</span> fml_tsls, <span class="at">ref_dist =</span> <span class="st">&quot;normal&quot;</span>,</span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a>                                    <span class="at">sign_level =</span> <span class="fl">0.01</span>, <span class="at">initial_est =</span> <span class="st">&quot;saturated&quot;</span>, <span class="at">split =</span> <span class="fl">0.5</span>,</span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a>                                    <span class="at">iterations =</span> <span class="st">&quot;convergence&quot;</span>, <span class="at">convergence_criterion =</span> <span class="dv">0</span>)</span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a><span class="fu">print</span>(saturated_conv)</span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a><span class="co">#&gt; Outlier-Robust 2SLS Model </span></span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a><span class="co">#&gt; Initial estimator:  saturated </span></span>
+<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a><span class="co">#&gt; Reference distribution:  normal </span></span>
+<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a><span class="co">#&gt; Two-stage Least-Squares Model: y ~ x2 | z2 </span></span>
+<span id="cb16-22"><a href="#cb16-22" tabindex="-1"></a><span class="co">#&gt; Iterations:  7 </span></span>
+<span id="cb16-23"><a href="#cb16-23" tabindex="-1"></a><span class="co">#&gt; Final selection:  Outliers found:  45     Outliers proportion:  0.045</span></span>
+<span id="cb16-24"><a href="#cb16-24" tabindex="-1"></a></span>
+<span id="cb16-25"><a href="#cb16-25" tabindex="-1"></a><span class="co"># which did it find in final selection?</span></span>
+<span id="cb16-26"><a href="#cb16-26" tabindex="-1"></a>detected_7_sat <span class="ot">&lt;-</span> <span class="fu">which</span>(saturated_conv<span class="sc">$</span>type<span class="sc">$</span>m7 <span class="sc">==</span> <span class="dv">0</span>)</span>
+<span id="cb16-27"><a href="#cb16-27" tabindex="-1"></a><span class="fu">identical</span>(detected_7, detected_7_sat)</span>
+<span id="cb16-28"><a href="#cb16-28" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 <p>Saturated 2SLS leads to a similar outcome. In the initial step, one
 more observation is classified as an outlier compared to Robust 2SLS but
 their converged classification is again the same.</p>
